@@ -140,7 +140,7 @@ func _process(delta : float) -> void:
 	
 	# Compute reflection plane and its global transform  (origin in the middle, 
 	#  X and Y axis properly aligned with the viewport, -Z is the mirror's forward direction) 
-	var reflection_transform := global_transform * Transform3D().rotated(Vector3.RIGHT, PI)
+	var reflection_transform := global_transform
 	var plane_origin := reflection_transform.origin
 	var plane_normal := reflection_transform.basis.z.normalized()
 	var reflection_plane := Plane(plane_normal, plane_origin.dot(plane_normal))
@@ -184,7 +184,10 @@ func _process(delta : float) -> void:
 	var rect_center := rect.position + rect.size / 2.0
 	reflection_transform.origin += reflection_transform.basis.x * rect_center.x
 	reflection_transform.origin += reflection_transform.basis.y * rect_center.y
-	
+ 
+	#var axis = Vector3(1, 0, 0)
+	#reflection_transform.basis = reflection_transform.basis.rotated(axis, deg_to_rad(180.0))
+
 	# The projected point of main camera's position onto the reflection plane
 	var proj_pos := reflection_plane.project(cam_pos)
 	
@@ -195,8 +198,10 @@ func _process(delta : float) -> void:
 	# - origin at the mirrored position
 	# - looking perpedicularly into the relfection plane (this way the near clip plane will be 
 	#      parallel to the reflection plane) 
-	var t := Transform3D(Basis(), mirrored_pos)
-	t = t.looking_at(proj_pos, reflection_transform.basis.y.normalized())
+	var t := Transform3D(Basis(), mirrored_pos)  
+	t = t.looking_at(proj_pos, reflection_transform.basis.y.normalized()) 
+	# flip horizontally
+	t = t.scaled_local(Vector3(-1, 1, 1)) 
 	reflect_camera.set_global_transform(t)
 	
 	# Compute the tilting offset for the frustum (the X and Y coordinates of the mirrored camera position
@@ -214,8 +219,6 @@ func _process(delta : float) -> void:
 	var clip_factor = (z_near - clip_bias) / z_near
 	if rect.size.y * clip_factor > 0:
 		reflect_camera.set_frustum(rect.size.y * clip_factor, -offset * clip_factor, z_near * clip_factor, main_cam.far)
-		
-	pass
 
 func update_viewport() -> void:
 	reflect_viewport.transparent_bg = not render_sky

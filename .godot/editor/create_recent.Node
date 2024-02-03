@@ -1,1 +1,5 @@
+PlanarReflector
+VoxelGI
+LightmapGI
 DirectionalLight3D
+MeshInstance3D

@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://tt3w1cwgnnci"]
+[gd_scene load_steps=18 format=3 uid="uid://tt3w1cwgnnci"]
 
 [ext_resource type="Texture2D" uid="uid://bivpbb14dg3v7" path="res://icon.png" id="2_4d10v"]
 [ext_resource type="Script" path="res://assets/camera_control.gd" id="3"]
@@ -12,6 +12,10 @@ sky_material = SubResource("ProceduralSkyMaterial_cf0a8")
 [sub_resource type="Environment" id="2"]
 background_mode = 2
 sky = SubResource("1")
+tonemap_white = 2.0
+glow_normalized = true
+glow_strength = 1.06
+glow_bloom = 0.3
 
 [sub_resource type="CylinderMesh" id="3"]
 bottom_radius = 0.001
@@ -21,30 +25,33 @@ size = Vector2(30, 30)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uy7la"]
 albedo_texture = ExtResource("2_4d10v")
+uv1_scale = Vector3(20, 20, 20)
 uv1_offset = Vector3(2.08165e-12, 0.39, 2.08165e-12)
+texture_filter = 5
 
 [sub_resource type="SphereMesh" id="9"]
 radius = 5.0
 height = 10.0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o1qk2"]
+albedo_color = Color(0, 0.737255, 0.298039, 1)
+
 [sub_resource type="BoxMesh" id="11"]
 size = Vector3(3, 3, 3)
 
-[sub_resource type="StandardMaterial3D" id="13"]
-emission_enabled = true
-emission = Color(1, 1, 1, 1)
-emission_energy_multiplier = 9.26
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vnm7w"]
+albedo_color = Color(1, 0.266667, 0.356863, 1)
 
-[sub_resource type="SphereMesh" id="14"]
-radius = 0.2
-height = 0.4
-radial_segments = 16
-rings = 8
+[sub_resource type="BoxMesh" id="BoxMesh_fv0pg"]
+size = Vector3(1, 3.645, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vujbs"]
+albedo_color = Color(0.780392, 0.415686, 0, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sn8u"]
-albedo_color = Color(0.721569, 0.654902, 0.901961, 1)
+albedo_color = Color(0.890196, 0.890196, 0.898039, 1)
 metallic = 1.0
-roughness = 0.11
+roughness = 0.0
 
 [sub_resource type="QuadMesh" id="15"]
 size = Vector2(30, 30)
@@ -53,6 +60,10 @@ size = Vector2(30, 30)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("2")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.2706, 0.680726, -0.680726, 2.4663e-16, 0.707107, 0.707107, 0.962692, -0.191343, 0.191343, 0, 0, 0)
+light_energy = 1.5
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866025, -3.2109, 2.49115, 2.28461)
@@ -73,31 +84,43 @@ mesh = SubResource("5")
 surface_material_override/0 = SubResource("StandardMaterial3D_uy7la")
 
 [node name="Sphere" type="MeshInstance3D" parent="Scene"]
-transform = Transform3D(-1, 0, -1.50996e-07, 0, 1, 0, 1.50996e-07, 0, -1, 9.99317, -2.27971, -3.56913)
+transform = Transform3D(-1, 0, -1.50996e-07, 0, 1, 0, 1.50996e-07, 0, -1, 7.23162, -2.27971, -3.56913)
 layers = 2
 mesh = SubResource("9")
+surface_material_override/0 = SubResource("StandardMaterial3D_o1qk2")
 
 [node name="Cube" type="MeshInstance3D" parent="Scene"]
 transform = Transform3D(-1, 0, -1.50996e-07, 0, 1, 0, 1.50996e-07, 0, -1, -6.62608, 1.45155, 2.12634)
 mesh = SubResource("11")
+surface_material_override/0 = SubResource("StandardMaterial3D_vnm7w")
 
-[node name="OmniLight3D" type="OmniLight3D" parent="Scene"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.04976, 7.33865, 0)
-layers = 1048575
-omni_range = 28.1078
-omni_attenuation = 2.21914
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Scene/OmniLight3D"]
-material_override = SubResource("13")
-mesh = SubResource("14")
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Scene"]
+transform = Transform3D(-0.654002, -0.756493, -3.30674e-08, -1.5246e-23, -4.37114e-08, 1, -0.756493, 0.654002, 2.85873e-08, 6.6345, 5.79313, 3.84053)
+mesh = SubResource("BoxMesh_fv0pg")
+skeleton = NodePath("")
+surface_material_override/0 = SubResource("StandardMaterial3D_vujbs")
 
 [node name="PlanarReflector" type="MeshInstance3D" parent="Scene"]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0)
+transform = Transform3D(4.37114e-08, -1, 8.74228e-08, -1, -4.37114e-08, -3.48787e-16, 4.17016e-15, -8.74228e-08, -1, 0, 0, 10.1234)
+material_override = SubResource("StandardMaterial3D_6sn8u")
+cast_shadow = 0
+mesh = SubResource("15")
+script = ExtResource("7")
+environment = null
+resolution = 1024
+fit_mode = 0
+perturb_scale = 0.7
+clip_bias = 0.1
+render_sky = false
+cull_mask = 1048575
+
+[node name="PlanarReflector3" type="MeshInstance3D" parent="Scene"]
+transform = Transform3D(1, -6.97574e-16, -1.5246e-23, -1.5246e-23, -4.37114e-08, 1, -6.97574e-16, -1, -4.37114e-08, 2.08165e-12, 2.08165e-12, 2.08165e-12)
 material_override = SubResource("StandardMaterial3D_6sn8u")
 mesh = SubResource("15")
 script = ExtResource("7")
 environment = null
-resolution = 512
+resolution = 1024
 fit_mode = 0
 perturb_scale = 0.7
 clip_bias = 0.1

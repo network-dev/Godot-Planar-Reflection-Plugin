@@ -3,3 +3,5 @@ res://main.tscn
 res://addons/Silicon.vfx.planar_reflection/discard.material
 res://addons/Silicon.vfx.planar_reflection/base_reflection.gdshader
 res://addons/Silicon.vfx.planar_reflection/base_reflection_gles2.gdshader
+res://addons/Silicon.vfx.planar_reflection/planar_reflector.gd
+res://test.res

@@ -1,12 +1,14 @@
 # Godot-Planar-Reflection-Plugin
 
-This plugin, adds planar reflection to the Godot game engine. The original version is still at 3.2 so I ported it to 4.2.1
-The original version can be found at: https://github.com/SIsilicon/Godot-Planar-Reflection-Plugin
+Adds planar reflection to the Godot game engine, working on Godot 4.2.1. 
+The original version for Godot 3.2 can be found at: https://github.com/SIsilicon/Godot-Planar-Reflection-Plugin
 
 Still WIP, the reflections are not properly aligned.
 
 ## What is this?
 If you're don't know what Planar Reflection is, then let me explain. Planar Reflection is a technique used in real time graphics engines to render a reflection on a planar surface. "Planar" includes anything that's at least close to flat; like a floor, a mirror or a calm body of water. How it does it is that it renders the scene a second time from a different perspective. This second render is then projected onto the plane that'll have the reflection.
+
+![Current state](pictures/Planar_Updated.png)
 
 ![How_it_works](pictures/How_it_works.png) The advantage of using this over something like Screen Space Reflection is that it does not rely on what's on screen. No matter what angle you look at it, everything will show in the reflection.
 ![Screen_Space_vs_Planar](pictures/Screen_Space_vs_Planar.png)Of course, because it renders the scene another time, having a lot of these is probably not a good idea; use them wisely and sparingly.
@@ -21,8 +23,8 @@ Then in your Project Settings, go to the Plugins tab and enable the plugin. Simp
 As stated before, the plugin adds a new node called `PlanarReflector`. All you need to do to get reflections set up is
 
 1. Add a `PlanarReflector` to the scene.
-2. Add a material. Preferably a `SpatialMaterial`.
-3. Adjust the default geometry as needed (set its size; **not its scale**).
+2. Add a material to the material override property. Preferably a `SpatialMaterial`.
+3. Adjust the default geometry as needed (set its size; **not its scale**) and keep the orientation towards Z. 
 
 At first you won't see a reflection, but that's because the default material has a high roughness parameter.
 
@@ -44,8 +46,6 @@ It also works with `ShaderMaterials`. Which means you can finally have that beau
 
 ![Shader Material](pictures/Shader_Material.png)
 
-What's also great is that the reflections can be previewed directly in the editor, as the pictures above show. Sure the reflection lags behind when you move the camera around, but it's better than nothing. ;)
-
 ### Parameters
 
 ![Parameters](pictures/Parameters.png)
@@ -64,10 +64,9 @@ The `PlanarReflector` has the following parameters available.
 
 ## Limitations
 
-* The planar reflection will still be visible in unshaded materials, but honestly, why would use an unshaded material to begin with? :/
-
+* The planar reflection will still be visible in unshaded materials
 * The reflection doesn't work properly on double-sided materials. More specifically on the opposite side of the plane.
-* Materials stored directly in the reflector's mesh will have no effect.
+* Materials stored directly in the reflector's mesh will have no effect (use the material_override property).
 * Specular highlights, from point lights and such, don't appear in metallic reflections. This can be worked around by disabling `Render Sky`. The highlight will appear where there is no geometry.
 
 ## Special Thanks
