@@ -2,7 +2,6 @@ shader_type spatial;
 
 //PR__UNIFORMS_AND_FUNCTIONS__PR//
 uniform sampler2D _pr_viewport;
-uniform ivec2 _pr_viewport_size;
 uniform vec4 _pr_viewport_rect = vec4(-2.0, -2.0, 4.0, 4.0);
 uniform float _pr_perturb_scale = 1.0;
 
@@ -21,10 +20,11 @@ vec4 _pr_cubic(float v) {
 	return vec4(x, y, z, w) * (1.0/6.0);
 }
 
-vec4 _pr_texture_bicubic(sampler2D sampler, ivec2 sampler_size, vec2 tex_coords) {
-	vec2 inv_sampler_size = 1.0 / vec2(sampler_size);
+vec4 _pr_texture_bicubic(sampler2D sampler, vec2 tex_coords) {
+	vec2 tex_size = vec2(textureSize(sampler, 0));
+	vec2 inv_tex_size = 1.0 / tex_size;
 	
-	tex_coords = tex_coords * vec2(sampler_size) - 0.5;
+	tex_coords = tex_coords * tex_size - 0.5;
 	
 	vec2 fxy = fract(tex_coords);
 	tex_coords -= fxy;
@@ -37,7 +37,7 @@ vec4 _pr_texture_bicubic(sampler2D sampler, ivec2 sampler_size, vec2 tex_coords)
 	vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
 	vec4 offset = c + vec4 (xcubic.yw, ycubic.yw) / s;
 	
-	offset *= inv_sampler_size.xxyy;
+	offset *= inv_tex_size.xxyy;
 	
 	vec4 sample0 = texture(sampler, offset.xz);
 	vec4 sample1 = texture(sampler, offset.yz);
@@ -70,21 +70,21 @@ void fragment() {
 	ROUGHNESS = 0.0;
 	
 	//PR__FRAGMENT_CODE__PR//
-	vec3 _pr_ray_origin = CAMERA_MATRIX[3].xyz;
-	vec3 _pr_plane_origin = WORLD_MATRIX[3].xyz;
-	vec3 _pr_plane_normal = WORLD_MATRIX[2].xyz;
-	vec3 _pr_final_normal = _pr_normal_from_normalmap(NORMALMAP, NORMAL, TANGENT, BINORMAL, NORMALMAP_DEPTH);
+	vec3 _pr_ray_origin = INV_VIEW_MATRIX[3].xyz;
+	vec3 _pr_plane_origin = MODEL_MATRIX[3].xyz;
+	vec3 _pr_plane_normal = MODEL_MATRIX[2].xyz;
+	vec3 _pr_final_normal = _pr_normal_from_normalmap(NORMAL_MAP, NORMAL, TANGENT, BINORMAL, NORMAL_MAP_DEPTH);
 	if(!FRONT_FACING)
 		_pr_final_normal *= -1.0;
 	
-	vec4 _pr_point_on_plane = CAMERA_MATRIX * vec4(VERTEX, 1.0);
-	_pr_point_on_plane.xyz += reflect(mat3(CAMERA_MATRIX) * reflect(-VIEW, _pr_final_normal) * _pr_perturb_scale, _pr_plane_normal);
+	vec4 _pr_point_on_plane = INV_VIEW_MATRIX * vec4(VERTEX, 1.0);
+	_pr_point_on_plane.xyz += reflect(mat3(INV_VIEW_MATRIX) * reflect(-VIEW, _pr_final_normal) * _pr_perturb_scale, _pr_plane_normal);
 	_pr_point_on_plane.xyz = _pr_line_plane_intersect(_pr_ray_origin, _pr_point_on_plane.xyz - _pr_ray_origin, _pr_plane_origin, _pr_plane_normal);
 	
-	vec4 _pr_model_pos = inverse(WORLD_MATRIX) * _pr_point_on_plane;
+	vec4 _pr_model_pos = inverse(MODEL_MATRIX) * _pr_point_on_plane;
 	vec2 _pr_uv = (vec2(_pr_model_pos.x, -_pr_model_pos.y) - _pr_viewport_rect.xy) / _pr_viewport_rect.zw;
 	
-	vec4 _pr_reflection = _pr_texture_bicubic(_pr_viewport, _pr_viewport_size, _pr_uv);
+	vec4 _pr_reflection = _pr_texture_bicubic(_pr_viewport, _pr_uv);
 	if(any(isnan(_pr_reflection))) {
 		_pr_reflection = vec4(1.0, 1.0, 1.0, 0.0);
 	}

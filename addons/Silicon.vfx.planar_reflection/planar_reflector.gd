@@ -1,5 +1,5 @@
-tool
-extends MeshInstance
+@tool
+extends MeshInstance3D
 
 const SHOW_NODES_IN_EDITOR = false
 
@@ -10,7 +10,7 @@ enum FitMode {
 
 # Exported variables
 ## The resolution of the reflection.
-var resolution := 512 setget set_resolution
+var resolution := 512: set = set_resolution
 ## How the reflection fits in the area.
 var fit_mode : int = FitMode.FIT_AREA
 ## How much normal maps distort the reflection.
@@ -21,37 +21,36 @@ var clip_bias := 0.1
 ## Whether to render the sky in the reflection.
 ## Disabling this allows you to mix planar reflection, with other sources of reflections,
 ## such as reflection probes.
-var render_sky := true setget set_render_sky
+var render_sky := true: set = set_render_sky
 ## What geometry gets rendered into the reflection.
-var cull_mask := 0xfffff setget set_cull_mask
+var cull_mask := 0xfffff: set = set_cull_mask
 ## Custom environment to render the reflection with.
-var environment : Environment setget set_environment
+var environment : Environment: set = set_environment
 
 # Internal variables
-var plugin
-
-var reflect_mesh : MeshInstance
-var reflect_viewport : Viewport
+var reflect_mesh : MeshInstance3D
+var reflect_viewport : SubViewport
 var reflect_texture : ViewportTexture
 var viewport_rect := Rect2(0, 0, 1, 1)
 
-var main_cam : Camera
-var reflect_camera : Camera
+var main_cam : Camera3D
+var reflect_camera : Camera3D
 
-func _set(property : String, value) -> bool:
+func _set(property : StringName, value) -> bool:
 	match property:
 		"mesh":
-			set_mesh(value)
+			set_mesh_c(value)
 		"material_override":
-			set_material_override(value)
+			set_material_override_c(value)
+			print("setting reflection material")
 		"cast_shadow":
-			set_cast_shadow(value)
+			set_cast_shadow_c(value)
 		"layers":
-			set_layers(value)
+			set_layers_c(value)
 		_:
 			if property.begins_with("material/"):
 				property.erase(0, "material/".length())
-				set_surface_material(int(property), value)
+				set_surface_override_material_c(int(property), value)
 			else:
 				return false
 	return true
@@ -62,24 +61,21 @@ func _get_property_list() -> Array:
 	props += [{"name": "PlanarReflector", "type": TYPE_NIL, "usage": PROPERTY_USAGE_CATEGORY}]
 	props += [{"name": "environment", "type": TYPE_OBJECT, "hint": PROPERTY_HINT_RESOURCE_TYPE, "hint_string": "Environment"}]
 	props += [{"name": "resolution", "type": TYPE_INT}]
-	props += [{"name": "fit_mode", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Fit Area, Fit View"}]
-	props += [{"name": "perturb_scale", "type": TYPE_REAL}]
-	props += [{"name": "clip_bias", "type": TYPE_REAL, "hint": PROPERTY_HINT_RANGE, "hint_string": "0, 1, 0.01, or_greater"}]
+	props += [{"name": "fit_mode", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Fit Area3D, Fit View"}]
+	props += [{"name": "perturb_scale", "type": TYPE_FLOAT}]
+	props += [{"name": "clip_bias", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0, 1, 0.01, or_greater"}]
 	props += [{"name": "render_sky", "type": TYPE_BOOL}]
 	props += [{"name": "cull_mask", "type": TYPE_INT, "hint": PROPERTY_HINT_LAYERS_3D_RENDER}]
 	
 	return props
 
 func _ready() -> void:
-	if Engine.editor_hint:
-		plugin = get_node("/root/EditorNode/PlanarReflectionPlugin")
-	
 	if SHOW_NODES_IN_EDITOR:
 		for node in get_children():
 			node.queue_free()
 	
 	# Create mirror surface
-	reflect_mesh = MeshInstance.new()
+	reflect_mesh = MeshInstance3D.new()
 	reflect_mesh.layers = layers
 	reflect_mesh.cast_shadow = cast_shadow
 	reflect_mesh.mesh = mesh
@@ -89,59 +85,62 @@ func _ready() -> void:
 		self.mesh = QuadMesh.new()
 	
 	# Create reflection viewport
-	reflect_viewport = Viewport.new()
+	reflect_viewport = SubViewport.new()
 	reflect_viewport.transparent_bg = not render_sky
-	reflect_viewport.keep_3d_linear = true
-	reflect_viewport.hdr = true
-	reflect_viewport.msaa = Viewport.MSAA_4X
-	reflect_viewport.shadow_atlas_size = 512
+	#reflect_viewport.keep_3d_linear = true @fixme
+	#reflect_viewport.hdr = true @fixme
+	#reflect_viewport.msaa = SubViewport.MSAA_4X @fixme
+	#reflect_viewport.shadow_atlas_size = 512 @fixme
 	add_child(reflect_viewport)
 	
 	# Add a mirror camera
-	reflect_camera = Camera.new()
+	reflect_camera = Camera3D.new()
 	reflect_camera.cull_mask = cull_mask
 	reflect_camera.environment = environment
 	reflect_camera.name = "reflect_cam"
-	reflect_camera.keep_aspect = Camera.KEEP_HEIGHT
+	reflect_camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	reflect_camera.current = true
 	reflect_viewport.add_child(reflect_camera)
 	
-	yield(get_tree(), 'idle_frame')
-	yield(get_tree(), 'idle_frame')
+	await get_tree().process_frame 
 	
 	# Create reflection texture
-	reflect_texture = reflect_viewport.get_texture()
-	reflect_texture.set_flags(Texture.FLAG_FILTER)
-	if not Engine.is_editor_hint():
-		reflect_texture.viewport_path = "/root/" + get_node("/root").get_path_to(reflect_viewport)
+	reflect_texture = reflect_viewport.get_texture() 
+	
+	if Engine.is_editor_hint(): #fixme
+		reflect_texture.viewport_path = NodePath("/root/" + str(get_node("/root").get_path_to(reflect_viewport)))
 	
 	self.material_override = material_override
-	for mat in get_surface_material_count():
-		set_surface_material(mat, get_surface_material(mat))
+	for mat in get_surface_override_material_count():
+		set_surface_override_material(mat, get_surface_override_material(mat))
 	
 	if SHOW_NODES_IN_EDITOR:
 		for i in get_children():
 			i.owner = get_tree().edited_scene_root
+	
+	pass
 
 func _process(delta : float) -> void:
 	if not reflect_camera or not reflect_viewport or not get_extents().length():
+		print("no reflect viewport")
 		return
-	update_viewport()
 	
+	update_viewport()
+
 	# Get main camera and viewport
-	var main_viewport : Viewport
-	if Engine.editor_hint:
-		main_cam = plugin.editor_camera
-		if not main_cam:
-			return
-		main_viewport = main_cam.get_parent()
+	var main_viewport : Viewport = get_viewport() as Viewport 
+	
+	if not Engine.is_editor_hint():  
+		main_cam = get_viewport().get_camera_3d() 
 	else:
-		main_viewport = get_viewport()
-		main_cam = main_viewport.get_camera()
+		#https://github.com/godotengine/godot/issues/73525
+		var editor_viewport = (EditorPlugin as Variant).new().get_editor_interface().get_editor_viewport_3d();
+		main_cam = editor_viewport.get_camera_3d()
+		main_viewport = editor_viewport as Viewport
 	
 	# Compute reflection plane and its global transform  (origin in the middle, 
 	#  X and Y axis properly aligned with the viewport, -Z is the mirror's forward direction) 
-	var reflection_transform := global_transform * Transform().rotated(Vector3.RIGHT, PI)
+	var reflection_transform := global_transform * Transform3D().rotated(Vector3.RIGHT, PI)
 	var plane_origin := reflection_transform.origin
 	var plane_normal := reflection_transform.basis.z.normalized()
 	var reflection_plane := Plane(plane_normal, plane_origin.dot(plane_normal))
@@ -152,20 +151,24 @@ func _process(delta : float) -> void:
 	# Calculate the area the viewport texture will fit into.
 	var rect : Rect2
 	if fit_mode == FitMode.FIT_VIEW:
+		if main_viewport == null:
+			print("missing viewport")
+			return
+		
 		# Area of the plane that's visible
 		for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
-			var ray := main_cam.project_ray_normal(corner * main_viewport.size)
+			var ray := main_cam.project_ray_normal(corner * Vector2(main_viewport.size))
 			var intersection = reflection_plane.intersects_ray(cam_pos, ray)
 			if not intersection:
 				intersection = reflection_plane.project(cam_pos + ray * main_cam.far)
-			intersection = reflection_transform.xform_inv(intersection)
+			intersection = (intersection) * reflection_transform
 			intersection = Vector2(intersection.x, intersection.y)
 			
 			if not rect:
 				rect = Rect2(intersection, Vector2())
 			else:
 				rect = rect.expand(intersection)
-		rect = Rect2(-get_extents() / 2.0, get_extents()).clip(rect)
+		rect = Rect2(-get_extents() / 2.0, get_extents()).intersection(rect)
 		
 		# Aspect ratio of our extents must also be enforced.
 		var aspect = rect.size.aspect()
@@ -192,13 +195,13 @@ func _process(delta : float) -> void:
 	# - origin at the mirrored position
 	# - looking perpedicularly into the relfection plane (this way the near clip plane will be 
 	#      parallel to the reflection plane) 
-	var t := Transform(Basis(), mirrored_pos)
+	var t := Transform3D(Basis(), mirrored_pos)
 	t = t.looking_at(proj_pos, reflection_transform.basis.y.normalized())
 	reflect_camera.set_global_transform(t)
 	
 	# Compute the tilting offset for the frustum (the X and Y coordinates of the mirrored camera position
 	# when expressed in the reflection plane coordinate system) 
-	var offset = reflection_transform.xform_inv(cam_pos)
+	var offset = (cam_pos) * reflection_transform
 	offset = Vector2(offset.x, offset.y)
 	
 	# Set mirror camera frustum
@@ -211,6 +214,8 @@ func _process(delta : float) -> void:
 	var clip_factor = (z_near - clip_bias) / z_near
 	if rect.size.y * clip_factor > 0:
 		reflect_camera.set_frustum(rect.size.y * clip_factor, -offset * clip_factor, z_near * clip_factor, main_cam.far)
+		
+	pass
 
 func update_viewport() -> void:
 	reflect_viewport.transparent_bg = not render_sky
@@ -218,8 +223,8 @@ func update_viewport() -> void:
 	if new_size.x > new_size.y:
 		new_size = new_size / new_size.x * resolution
 	
-	new_size = new_size.floor()
-	if new_size != reflect_viewport.size:
+	var new_size_round = Vector2i(new_size.floor())
+	if new_size_round != reflect_viewport.size:
 		reflect_viewport.size = new_size
 
 func get_extents() -> Vector2:
@@ -242,47 +247,66 @@ static func scale_rect2(rect : Rect2, scale : Vector2) -> Rect2:
 
 func set_resolution(value : int) -> void:
 	resolution = max(value, 1)
+	pass
 
 func set_render_sky(value : bool) -> void:
 	render_sky = value
 	if reflect_viewport:
 		reflect_viewport.transparent_bg = not render_sky
+	pass
 
 func set_cull_mask(value : int) -> void:
 	cull_mask = value
 	if reflect_camera:
 		reflect_camera.cull_mask = cull_mask
+	pass
 
 func set_environment(value : Environment) -> void:
 	environment = value
 	if reflect_camera:
 		reflect_camera.environment = environment
+	pass
 
-func set_mesh(value : Mesh) -> void:
+func set_mesh_c(value : Mesh) -> void:
 	mesh = value
 	reflect_mesh.mesh = mesh
+	pass
 
-func set_material_override(value : Material) -> void:
+func set_material_override_c(value : Material) -> void:
+	print("t1")
 	if material_override and material_override != value:
 		ReflectMaterialManager.remove_material(material_override, self)
+		print("removing material")
 	
+	print("t2")
 	material_override = value
-	VisualServer.instance_geometry_set_material_override(get_instance(), preload("discard.material").get_rid())
+	print("t3")
+	RenderingServer.instance_geometry_set_material_override(get_instance(), preload("discard.material").get_rid())
+	print("t4")
 	reflect_mesh.material_override = ReflectMaterialManager.add_material(value, self)
+	print("added new material")
+	pass
 
-func set_surface_material(index : int, value : Material) -> void:
-	var material = get_surface_material(index)
+func set_surface_override_material_c(index : int, value : Material) -> void:
+	var material = get_surface_override_material(index)
+	
+	print("g1")
 	
 	if material and material != value:
 		ReflectMaterialManager.remove_material(material, self)
 	
-	.set_surface_material(index, value)
-	reflect_mesh.set_surface_material(index, ReflectMaterialManager.add_material(value, self))
+	print("g2")
+	
+	super.set_surface_override_material(index, value)
+	reflect_mesh.set_surface_override_material(index, ReflectMaterialManager.add_material(value, self))
+	pass
 
-func set_cast_shadow(value : int) -> void:
+func set_cast_shadow_c(value : int) -> void:
 	cast_shadow = value
 	reflect_mesh.cast_shadow = value
+	pass
 
-func set_layers(value : int) -> void:
+func set_layers_c(value : int) -> void:
 	layers = value
 	reflect_mesh.layers = value
+	pass

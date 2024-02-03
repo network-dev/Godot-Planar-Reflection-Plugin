@@ -6,28 +6,32 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
-
-_global_script_classes=[  ]
-_global_script_class_icons={
-
-}
+config_version=5
 
 [application]
 
 config/name="Planar Reflection Plugin"
 run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.2")
 config/icon="res://icon.png"
 
 [autoload]
 
 ReflectMaterialManager="*res://addons/Silicon.vfx.planar_reflection/reflect_material_manager.gd"
 
+[dotnet]
+
+project/assembly_name="Planar Reflection Plugin"
+
 [editor_plugins]
 
-enabled=PoolStringArray( "Silicon.vfx.planar_reflection" )
+enabled=PackedStringArray("res://addons/Silicon.vfx.planar_reflection/plugin.cfg")
+
+[filesystem]
+
+import/blender/enabled=false
 
 [rendering]
 
+environment/defaults/default_environment="res://default_env.tres"
 quality/filters/msaa=2
-environment/default_environment="res://default_env.tres"
