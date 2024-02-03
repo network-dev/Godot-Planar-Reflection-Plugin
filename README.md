@@ -1,6 +1,7 @@
 # Godot-Planar-Reflection-Plugin
 
-Greetings! This plugin, as the name implies adds planar reflection to the Godot game engine. 3.2 to be more specific. I made this plugin to make it easier for others to have good looking reflections for their 3D games. Watch as objects in the scene are faithfully reflected in the planar reflectors. I hope you find this useful. :)
+This plugin, adds planar reflection to the Godot game engine. The original version is still at 3.2 so I ported it to 4.2.1
+The original version can be found at: https://github.com/SIsilicon/Godot-Planar-Reflection-Plugin
 
 ## What is this?
 If you're don't know what Planar Reflection is, then let me explain. Planar Reflection is a technique used in real time graphics engines to render a reflection on a planar surface. "Planar" includes anything that's at least close to flat; like a floor, a mirror or a calm body of water. How it does it is that it renders the scene a second time from a different perspective. This second render is then projected onto the plane that'll have the reflection.
