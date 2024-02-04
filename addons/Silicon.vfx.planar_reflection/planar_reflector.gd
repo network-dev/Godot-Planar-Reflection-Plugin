@@ -42,7 +42,7 @@ func _set(property : StringName, value) -> bool:
 			set_mesh_c(value)
 		"material_override":
 			set_material_override_c(value)
-			print("setting reflection material")
+			print("[PlanarReflections] Updating reflection material")
 		"cast_shadow":
 			set_cast_shadow_c(value)
 		"layers":
@@ -119,7 +119,7 @@ func _ready() -> void:
 
 func _process(delta : float) -> void:
 	if not reflect_camera or not reflect_viewport or not get_extents().length():
-		print("no reflect viewport")
+		print("[PlanarReflections] Failed to initialize variables")
 		return
 	
 	update_viewport()
@@ -149,7 +149,7 @@ func _process(delta : float) -> void:
 	var rect : Rect2
 	if fit_mode == FitMode.FIT_VIEW:
 		if main_viewport == null:
-			print("missing viewport")
+			print("[PlanarReflections] Missing reflection viewport")
 			return
 		
 		# Area of the plane that's visible
@@ -176,6 +176,7 @@ func _process(delta : float) -> void:
 	else:
 		# Area of the whole plane
 		rect = Rect2(-get_extents() / 2.0, get_extents())
+	
 	viewport_rect = rect
 	
 	var rect_center := rect.position + rect.size / 2.0

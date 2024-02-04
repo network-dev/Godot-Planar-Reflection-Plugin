@@ -3,7 +3,7 @@ shader_type spatial;
 //PR__UNIFORMS_AND_FUNCTIONS__PR//
 uniform sampler2D _pr_viewport;
 uniform vec4 _pr_viewport_rect = vec4(-2.0, -2.0, 4.0, 4.0);
-uniform float _pr_perturb_scale = 1.0;
+uniform float _pr_perturb_scale = 1.0; 
 
 vec3 _pr_fresnel(vec3 f0, float cos_theta) {
 	vec3 fres = f0 + (vec3(1.0) - f0)*pow(1.0 - abs(cos_theta), 5.0);

@@ -44,7 +44,7 @@ func _pre_draw() -> void:
 
 func add_material(material : Material, planar) -> ShaderMaterial:
 	if not material:
-		print("missing material")
+		print("[PlanarReflections] Missing material")
 		return null
 	
 	var idx := materials.find(material)
@@ -88,6 +88,7 @@ func update_material(index : int) -> void:
 		else:
 			update_reflector(index, planar, material, variables)
 
+var tests = [0, 0, 0, 0, 0]
 func update_reflector(index : int, planar, material : Material, variables := []) -> void:
 	var reflector : ShaderMaterial = reflectors[index][planar]
 	  
@@ -117,7 +118,7 @@ func update_reflector(index : int, planar, material : Material, variables := [])
 						Plane(0.333, 0.333, 0.333, 0)]\
 					[material.get(name)]
 				shader_params.append([variable[0], value])
-		else:
+		else: 
 			# Check for change in shader code
 			if reflector.has_meta("prev_code"): 
 				var prev_code = reflector.get_meta("prev_code")
@@ -126,28 +127,32 @@ func update_reflector(index : int, planar, material : Material, variables := [])
 			else:
 				update_required = true
 				
-			reflector.set_meta("prev_code", RenderingServer.shader_get_code(material.shader.get_rid()))
+			if not material.shader == null:
+				reflector.set_meta("prev_code", RenderingServer.shader_get_code(material.shader.get_rid()))
+			else:
+				update_required = false
+							
 			shader_params.append([variable[0], material.get(name)])
 	 
-	if update_required:
-		if material is ShaderMaterial: 
-			reflector = material 
-			print("To use a ShaderMaterial for reflections use base_reflection.gdshader as starting point.")
-		else:
-			reflector.shader = convert_material(material)
- 
+	if material is ShaderMaterial: 
+		# Don't convert ShaderMaterials
+		reflector = material   
+	elif update_required: 
+		# Convert other materials to ShaderMaterial
+		reflector.shader = convert_material(material)
+ 	 
 	for variable in shader_params:
 		reflector.set_shader_parameter(variable[0], variable[1])
-	
-	# Pass planar reflector parameters
+
+	# Pass planar reflector parameters  
 	var rect : Rect2 = planar.viewport_rect
 	reflector.set_shader_parameter("_pr_viewport_rect", Plane(
-			rect.position.x, rect.position.y, rect.size.x, rect.size.y))
+		rect.position.x, rect.position.y, rect.size.x, rect.size.y))
 	reflector.set_shader_parameter("_pr_viewport", planar.reflect_texture)
 	reflector.set_shader_parameter("_pr_perturb_scale", planar.perturb_scale)
 	reflector.set_shader_parameter("_pr_viewport_size", PackedInt32Array([
 			planar.reflect_texture.get_width(), planar.reflect_texture.get_height()]))
-
+		
 # Returns an array of [shader name, property of material]
 func read_material_properties(material : Material) -> Array:
 	var property_list := material.get_property_list()
@@ -211,17 +216,15 @@ static func convert_material(material : Material) -> Shader:
 	var base : String 
 	base = preload("base_reflection.gdshader").code
 	
-	# We are missing a method in Godot 4.X so we can't write to the
-	# shader directly: https://github.com/godotengine/godot-proposals/issues/8121
+	# We are missing a method in Godot 4.X so we can't get the shader code:
+	# https://github.com/godotengine/godot-proposals/issues/8121
 	var code = ""; # := RenderingServer.shader_get_code(material.get_shader_rid())
 	
 	# When a material is first created, it does not immediately have shader code.
 	# This makes sure that it will initially work.
 	if code.is_empty():
 		if material is StandardMaterial3D:
-			code = DEFAULT_SPATIAL_CODE
-		else:
-			return material.shader;
+			code = DEFAULT_SPATIAL_CODE  
 	
 	# Get the uniforms and functions from the base shader
 	var uni_func_start := base.find("//PR__UNIFORMS_AND_FUNCTIONS__PR//")

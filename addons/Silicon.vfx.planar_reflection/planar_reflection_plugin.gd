@@ -24,13 +24,13 @@ func _ready() -> void:
 			load(folder + "planar_reflector.gd"), icon
 	)
 	
-	print("planar reflection plugin enter tree")
+	print("[PlanarReflections] Loaded!")
 
 func _exit_tree():
 	remove_custom_type("PlanarReflector")
 	remove_autoload_singleton("ReflectMaterialManager")
 	
-	print("planar reflection plugin exit tree")
+	print("[PlanarReflections] Unloaded!")
 	pass
 
 func _handles(object):
