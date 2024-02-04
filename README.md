@@ -24,6 +24,7 @@ As stated before, the plugin adds a new node called `PlanarReflector`. All you n
 2. Add a material to the material override property. Preferably a `SpatialMaterial`.
 3. Adjust the default geometry as needed (set its size; **not its scale**) and keep the orientation towards Z. 
 
+When using a ShaderMaterial, add the contents of base_reflection.gdshader manually to the shader.
 At first you won't see a reflection, but that's because the default material has a high roughness parameter.
 
 ![Default material](pictures/Default_Material.png)
