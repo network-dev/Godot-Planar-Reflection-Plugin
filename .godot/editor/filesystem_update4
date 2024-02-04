@@ -1,6 +1,0 @@
-res://default_env.tres
-res://main.tscn
-res://addons/Silicon.vfx.planar_reflection/discard.material
-res://addons/Silicon.vfx.planar_reflection/base_reflection.gdshader
-res://addons/Silicon.vfx.planar_reflection/planar_reflector.gd
-res://addons/Silicon.vfx.planar_reflection/reflect_material_manager.gd
