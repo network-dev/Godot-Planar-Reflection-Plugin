@@ -86,11 +86,10 @@ func _ready() -> void:
 	
 	# Create reflection viewport
 	reflect_viewport = SubViewport.new()
-	reflect_viewport.transparent_bg = not render_sky
-	#reflect_viewport.keep_3d_linear = true @fixme
-	#reflect_viewport.hdr = true @fixme
-	#reflect_viewport.msaa = SubViewport.MSAA_4X @fixme
-	#reflect_viewport.shadow_atlas_size = 512 @fixme
+	reflect_viewport.transparent_bg = not render_sky 
+	reflect_viewport.use_hdr_2d = true  
+	reflect_viewport.msaa_3d = SubViewport.MSAA_4X 
+	reflect_viewport.positional_shadow_atlas_size = 512
 	add_child(reflect_viewport)
 	
 	# Add a mirror camera
@@ -117,8 +116,6 @@ func _ready() -> void:
 	if SHOW_NODES_IN_EDITOR:
 		for i in get_children():
 			i.owner = get_tree().edited_scene_root
-	
-	pass
 
 func _process(delta : float) -> void:
 	if not reflect_camera or not reflect_viewport or not get_extents().length():
@@ -173,9 +170,9 @@ func _process(delta : float) -> void:
 		# Aspect ratio of our extents must also be enforced.
 		var aspect = rect.size.aspect()
 		if aspect > get_extents().aspect():
-			rect = scale_rect2(rect, Vector2(1.0, aspect / get_extents().aspect()))
+			rect = scale_rect(rect, Vector2(1.0, aspect / get_extents().aspect()))
 		else:
-			rect = scale_rect2(rect, Vector2(get_extents().aspect() / aspect, 1.0))
+			rect = scale_rect(rect, Vector2(get_extents().aspect() / aspect, 1.0))
 	else:
 		# Area of the whole plane
 		rect = Rect2(-get_extents() / 2.0, get_extents())
@@ -185,9 +182,6 @@ func _process(delta : float) -> void:
 	reflection_transform.origin += reflection_transform.basis.x * rect_center.x
 	reflection_transform.origin += reflection_transform.basis.y * rect_center.y
  
-	#var axis = Vector3(1, 0, 0)
-	#reflection_transform.basis = reflection_transform.basis.rotated(axis, deg_to_rad(180.0))
-
 	# The projected point of main camera's position onto the reflection plane
 	var proj_pos := reflection_plane.project(cam_pos)
 	
@@ -237,7 +231,7 @@ func get_extents() -> Vector2:
 		return Vector2()
 
 # Scale rect2 relative to its center
-static func scale_rect2(rect : Rect2, scale : Vector2) -> Rect2:
+static func scale_rect(rect : Rect2, scale : Vector2) -> Rect2:
 	var center = rect.position + rect.size / 2.0;
 	rect.position -= center
 	rect.size *= scale
@@ -246,70 +240,50 @@ static func scale_rect2(rect : Rect2, scale : Vector2) -> Rect2:
 	
 	return rect
 
-# Setters
-
+# Setters 
 func set_resolution(value : int) -> void:
 	resolution = max(value, 1)
-	pass
 
 func set_render_sky(value : bool) -> void:
 	render_sky = value
 	if reflect_viewport:
 		reflect_viewport.transparent_bg = not render_sky
-	pass
 
 func set_cull_mask(value : int) -> void:
 	cull_mask = value
 	if reflect_camera:
 		reflect_camera.cull_mask = cull_mask
-	pass
 
 func set_environment(value : Environment) -> void:
 	environment = value
 	if reflect_camera:
 		reflect_camera.environment = environment
-	pass
 
 func set_mesh_c(value : Mesh) -> void:
 	mesh = value
 	reflect_mesh.mesh = mesh
-	pass
 
 func set_material_override_c(value : Material) -> void:
-	print("t1")
 	if material_override and material_override != value:
 		ReflectMaterialManager.remove_material(material_override, self)
-		print("removing material")
-	
-	print("t2")
-	material_override = value
-	print("t3")
+	 
 	RenderingServer.instance_geometry_set_material_override(get_instance(), preload("discard.material").get_rid())
-	print("t4")
+		
+	material_override = value
 	reflect_mesh.material_override = ReflectMaterialManager.add_material(value, self)
-	print("added new material")
-	pass
 
 func set_surface_override_material_c(index : int, value : Material) -> void:
 	var material = get_surface_override_material(index)
-	
-	print("g1")
-	
 	if material and material != value:
 		ReflectMaterialManager.remove_material(material, self)
-	
-	print("g2")
-	
+
 	super.set_surface_override_material(index, value)
 	reflect_mesh.set_surface_override_material(index, ReflectMaterialManager.add_material(value, self))
-	pass
 
 func set_cast_shadow_c(value : int) -> void:
 	cast_shadow = value
 	reflect_mesh.cast_shadow = value
-	pass
 
 func set_layers_c(value : int) -> void:
 	layers = value
 	reflect_mesh.layers = value
-	pass

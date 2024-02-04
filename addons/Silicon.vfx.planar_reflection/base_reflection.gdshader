@@ -66,7 +66,7 @@ vec3 _pr_line_plane_intersect(vec3 line_origin, vec3 line_dir, vec3 plane_origin
 
 void fragment() {
 	ALBEDO = vec3(1.0);
-	METALLIC = 1.0;
+	METALLIC = 0.5;
 	ROUGHNESS = 0.0;
 	
 	//PR__FRAGMENT_CODE__PR//
@@ -96,5 +96,4 @@ void fragment() {
 	METALLIC = mix(METALLIC, 1.0, pow(_pr_reflection.a, 4.0) * mix(_pr_reflectiveness.g, 1.0, METALLIC));
 	EMISSION += _pr_reflection.rgb * _pr_reflectiveness * _pr_reflection.a;
 	//PR__FRAGMENT_CODE__PR//
-
 }
